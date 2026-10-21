@@ -365,8 +365,8 @@ export class Building {
     P.ceilingLight = this.light('office', 'spot', 0xffe6c0, 22, [0, 3.1, -0.6], [0, 0, -1.2], { angle: 1.15, penumbra: 0.8, distance: 10, shadow: true, shadowSize: 1024 });
     this.fixture([0, 3.13, -0.6], false);
     P.monitorGlow = this.light('office', 'point', 0x7088ff, 3.5, [0.7, 1.15, -1.6], null, { distance: 5 });
-    P.leftLight = this.light('office', 'spot', 0xfff2dc, 40, [-4.4, 2.9, -0.8], [-4.8, 0.0, -1.0], { angle: 0.95, penumbra: 0.6, distance: 10, shadow: true, shadowSize: 1024 });
-    P.rightLight = this.light('office', 'spot', 0xfff2dc, 40, [4.4, 2.9, -0.8], [4.8, 0.0, -1.0], { angle: 0.95, penumbra: 0.6, distance: 10, shadow: true, shadowSize: 1024 });
+    P.leftLight = this.light('office', 'spot', 0xfff2dc, 34, [-2.7, 2.55, -0.3], [-5.0, 0.9, -1.0], { angle: 0.62, penumbra: 0.7, distance: 11, shadow: true, shadowSize: 1024 });
+    P.rightLight = this.light('office', 'spot', 0xfff2dc, 34, [2.7, 2.55, -0.3], [5.0, 0.9, -1.0], { angle: 0.62, penumbra: 0.7, distance: 11, shadow: true, shadowSize: 1024 });
     P.leftLight.visible = false; P.rightLight.visible = false;
     P.eyeLight = this.light('office', 'point', 0x3b4a6a, 0.9, [-3.9, 1.9, -0.8], null, { distance: 4 });
     // office camera
