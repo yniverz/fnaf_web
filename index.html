@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Five Nights at Freddy's - Web Recreation</title>
+<meta name="description" content="A faithful fan recreation of the original Five Nights at Freddy's, written in pure JavaScript with code-generated art and audio. No downloads, no server.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='17' r='11' fill='%236b4a2b'/%3E%3Ccircle cx='8' cy='8' r='4' fill='%236b4a2b'/%3E%3Ccircle cx='24' cy='8' r='4' fill='%236b4a2b'/%3E%3Crect x='11' y='1' width='10' height='6' fill='%23111'/%3E%3Ccircle cx='12' cy='15' r='2' fill='%23fff'/%3E%3Ccircle cx='20' cy='15' r='2' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="1280" height="720"></canvas>
+  <div id="boot">
+    <div class="boot-inner">
+      <div class="boot-title">FIVE NIGHTS AT FREDDY'S</div>
+      <div class="boot-sub">web recreation</div>
+      <button id="boot-btn">CLICK TO START</button>
+      <div class="boot-hint">Headphones recommended. The game uses your browser's audio and speech synthesis.</div>
+    </div>
+  </div>
+</div>
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/chars.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/office.js"></script>
+<script src="js/monitor.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/phone.js"></script>
+<script src="js/night.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
