@@ -451,7 +451,7 @@
     const info = bg.info, pr = info.pr;
     const cam = R.CAMS[id];
     const pan = cam.pan ? (cam.pan * (0.5 + 0.5 * Math.sin(st.t * 0.22 + id.length))) : 0;
-    const ox = -pan - (BW - FNAF.W) / 2 + cam.pan;   // keep the pan centered in the wide background
+    const ox = -(BW - FNAF.W) / 2 - pan + cam.pan / 2;   // slow drift, always within the wide background
     ctx.save();
     ctx.translate(Math.round(ox), 0);
     ctx.drawImage(bg.canvas, 0, 0);

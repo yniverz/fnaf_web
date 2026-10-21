@@ -88,17 +88,17 @@
     fx(name) {
       const a = A();
       if (name === 'bang') a.bang();
-      else if (name === 'music') a.musicStart(1.0, 0.12);
+      else if (name === 'music') { a.musicStart(1.0, 0.12); this.musicStarted = true; }
       else if (name === 'moan') a.moan(0.35);
       else if (name === 'scream') { a.musicStop(); setTimeout(() => { if (!this.muted) a.scream(0.3); }, 300); }
       else if (name === 'garble') a.garble(26);
     }
-    end() { this.state = 'done'; this.caption = ''; A().musicStop(); }
+    end() { this.state = 'done'; this.caption = ''; if (this.musicStarted) A().musicStop(); }
     mute() {
       if (!this.active) return;
       this.muted = true;
       A().stopSpeech();
-      A().musicStop();
+      if (this.musicStarted) A().musicStop();
       this.state = 'done'; this.caption = '';
     }
     stop() { this.mute(); }

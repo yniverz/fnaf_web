@@ -124,7 +124,7 @@
       else this.setScreen(new FNAF.Screens.PinkSlip(this));
     }
     gameOver(name) { this.setScreen(new FNAF.Screens.GameOver(this, name)); }
-    goldenCrash() { this.setScreen(new FNAF.Screens.GoldenCrash(this)); }
+    goldenCrash(silent) { this.setScreen(new FNAF.Screens.GoldenCrash(this, silent)); }
   }
 
   window.addEventListener('DOMContentLoaded', () => { window.fnafApp = new App(); });

@@ -86,13 +86,7 @@
       }
       if (!this.pending) return;
       if (this.pos === '1A' && (N.bonnie.pos === '1A' || N.chica.pos === '1A')) { this.pending = false; return; }
-      if (this.pos === '4B') {
-        if (N.monitorUp) return;                 // Freddy only enters while the monitor is down
-        this.pending = false;
-        if (N.rightDoorClosed) { this.pos = '4A'; N.notifyMove('freddy', '4B', '4A'); N.animatronicBlocked('right', 'freddy'); }
-        else { this.pos = 'OFFICE'; this.inOffice = true; N.animatronicEntered('right', 'freddy'); }
-        return;
-      }
+      if (this.pos === '4B') return;             // resolved when the monitor comes down (onMonitorDown)
       if (N.monitorUp && N.cam === this.pos) return;   // he will not move while watched
       this.pending = false;
       const path = ['1A', '1B', '7', '6', '4A', '4B'];
@@ -100,6 +94,13 @@
       this.pos = to;
       N.notifyMove('freddy', from, to);
       N.freddyLaugh();
+    }
+    /* Freddy makes his move on the office only at the moment the monitor is lowered */
+    onMonitorDown(N) {
+      if (this.inOffice || this.pos !== '4B' || !this.pending) return;
+      this.pending = false;
+      if (N.rightDoorClosed) { this.pos = '4A'; N.notifyMove('freddy', '4B', '4A'); N.animatronicBlocked('right', 'freddy'); }
+      else { this.pos = 'OFFICE'; this.inOffice = true; N.animatronicEntered('right', 'freddy'); }
     }
   }
 
@@ -134,10 +135,11 @@
       if (N.monitorUp || this.cooldown > 0) return;
       if (!this.roll()) return;
       this.stage++;
-      if (this.stage >= 4) {
-        this.left = true; this.running = false; this.leaveT = FNAF.rand(1.0, 4.0);
-        N.notifyMove('foxy', 'cove3', 'gone');
-      } else N.notifyMove('foxy', 'cove' + (this.stage - 1), 'cove' + this.stage);
+      N.notifyMove('foxy', 'cove' + (this.stage - 1), 'cove' + this.stage);
+      if (this.stage >= 3) {
+        // curtain open and empty: he is already on his way
+        this.left = true; this.running = false; this.leaveT = FNAF.rand(1.5, 5.0);
+      }
     }
     onMonitorDown() { this.cooldown = Math.max(this.cooldown, FNAF.rand(0.83, 16.67)); }
   }

@@ -39,7 +39,6 @@
     }
 
     /* ----------------------------------------------------------- AI hooks */
-    get leftDoorClosedForAI() { return this.leftDoorClosed; }
     notifyMove(name, from, to) {
       if (this.monitorUp && (this.cam === from || this.cam === to)) { this.burst = Math.max(this.burst, 0.8); A().camSwitch(); }
       if (name === 'bonnie' || name === 'chica') {
@@ -114,7 +113,7 @@
       if (id === this.cam) return;
       this.cam = id; this.burst = 1; A().camSwitch();
       if (id !== '2B') this.golden.poster = false;
-      else if (!this.golden.poster && FNAF.chance(1 / 100)) this.golden.poster = true;
+      else if (!this.golden.poster && FNAF.chance(1 / 250)) this.golden.poster = true;
       this.updateKitchenMusic();
     }
     updateKitchenMusic() {
@@ -139,6 +138,7 @@
       this.foxy.onMonitorDown();
       this.updateKitchenMusic();
       if (this.intruder) { this.triggerJumpscare(this.intruder.name); return; }
+      if (!this.powerOut) this.freddy.onMonitorDown(this);
       if (this.golden.poster) { this.golden.poster = false; this.golden.inOffice = true; this.golden.t = 0; A().breath(); }
     }
 
@@ -149,7 +149,7 @@
       if (this.state === 'scare') {
         this.jumpscare.t += dt;
         if (this.jumpscare.t > 1.4) {
-          if (this.jumpscare.name === 'golden') this.app.goldenCrash(); else this.app.gameOver(this.jumpscare.name);
+          if (this.jumpscare.name === 'golden') this.app.goldenCrash(true); else this.app.gameOver(this.jumpscare.name);
           this.state = 'done';
         }
         return;

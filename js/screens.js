@@ -384,7 +384,7 @@
 
   /* --------------------------------------------------- golden freddy */
   S.GoldenCrash = class {
-    constructor(app) { this.app = app; this.t = 0; A().scream(); }
+    constructor(app, silent) { this.app = app; this.t = 0; if (!silent) A().scream(); }
     update(dt) { this.t += dt; if (this.t > 3.2) this.app.toMenu(); }
     draw(ctx) {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
