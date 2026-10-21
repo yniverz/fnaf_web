@@ -47,16 +47,24 @@
   M.draw = function (ctx, st) {
     if (!mapBg) buildMap();
     // feed
-    FNAF.Rooms.draw(ctx, st.cam, st.room);
-    // static
-    FNAF.drawNoise(ctx, 0.10 + 0.9 * (st.burst || 0));
-    if (st.burst > 0.3) { ctx.fillStyle = 'rgba(0,0,0,' + (st.burst * 0.5) + ')'; ctx.fillRect(0, 0, FNAF.W, FNAF.H); }
-    FNAF.drawScanlines(ctx, 0.6);
-    // rolling bar
-    const by = ((st.t * 90) % (FNAF.H + 200)) - 100;
-    const g = ctx.createLinearGradient(0, by, 0, by + 90);
-    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.05)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, by, FNAF.W, 90);
+    if (st.feed3d !== undefined) {
+      if (st.feed3d) ctx.drawImage(st.feed3d, 0, 0, FNAF.W, FNAF.H);
+      else {
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, FNAF.W, FNAF.H);
+        FNAF.drawNoise(ctx, 0.08);
+        FNAF.text(ctx, 'CAMERA DISABLED', 640, 300, { size: 44, color: '#ddd', align: 'center', bold: true });
+        FNAF.text(ctx, 'AUDIO ONLY', 640, 360, { size: 44, color: '#ddd', align: 'center', bold: true });
+      }
+    } else {
+      FNAF.Rooms.draw(ctx, st.cam, st.room);
+      FNAF.drawNoise(ctx, 0.10 + 0.9 * (st.burst || 0));
+      if (st.burst > 0.3) { ctx.fillStyle = 'rgba(0,0,0,' + (st.burst * 0.5) + ')'; ctx.fillRect(0, 0, FNAF.W, FNAF.H); }
+      FNAF.drawScanlines(ctx, 0.6);
+      const by = ((st.t * 90) % (FNAF.H + 200)) - 100;
+      const g = ctx.createLinearGradient(0, by, 0, by + 90);
+      g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.05)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, by, FNAF.W, 90);
+    }
     // bezel
     ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 28; FNAF.roundRect(ctx, 0, 0, FNAF.W, FNAF.H, 40); ctx.stroke();
     ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 6; FNAF.roundRect(ctx, 12, 12, FNAF.W - 24, FNAF.H - 24, 30); ctx.stroke();

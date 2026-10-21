@@ -64,14 +64,24 @@
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
       // freddy face, flickering
       const v = this.variant;
-      const o = v === 0 ? { dark: 0.6 } : v === 1 ? { dark: 0.45, opts: { mouth: 0.35 } } : v === 2 ? { dark: 0.93, glow: true } : { dark: 0.3, opts: { eyes: 'black' } };
-      ctx.save();
-      ctx.globalAlpha = 0.9;
-      FNAF.Chars.draw(ctx, 'freddy', 'face', 960 + this.shiftX, 760, 1.0, o);
-      ctx.restore();
-      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, W, H);
-      FNAF.drawNoise(ctx, 0.08 + this.flash * 0.3);
-      FNAF.drawScanlines(ctx, 0.35);
+      const use3D = FNAF.R3 && FNAF.R3.ok;
+      if (use3D) {
+        const c = FNAF.R3.renderMenuFace(this.t, v);
+        if (c) ctx.drawImage(c, this.shiftX, 0, W, H);
+        ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(0, 0, W, H);
+        const g = ctx.createLinearGradient(0, 0, 640, 0); g.addColorStop(0, 'rgba(0,0,0,0.85)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 640, H);
+        FNAF.drawNoise(ctx, 0.03 + this.flash * 0.3);
+      } else {
+        const o = v === 0 ? { dark: 0.6 } : v === 1 ? { dark: 0.45, opts: { mouth: 0.35 } } : v === 2 ? { dark: 0.93, glow: true } : { dark: 0.3, opts: { eyes: 'black' } };
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        FNAF.Chars.draw(ctx, 'freddy', 'face', 960 + this.shiftX, 760, 1.0, o);
+        ctx.restore();
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, W, H);
+        FNAF.drawNoise(ctx, 0.08 + this.flash * 0.3);
+        FNAF.drawScanlines(ctx, 0.35);
+      }
       // title
       const jit = () => (Math.random() < 0.1 ? FNAF.rand(-2, 2) : 0);
       const tf = { family: FNAF.FONT_SERIF, bold: true, color: '#e8e8e8', shadow: '#000', shadowBlur: 10 };
@@ -181,6 +191,13 @@
     update(dt) { this.t += dt; if (this.t > 7) this.app.toMenu(); }
     draw(ctx) {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+      if (FNAF.R3 && FNAF.R3.ok) {
+        const c = FNAF.R3.renderGameOver(this.t);
+        if (c) ctx.drawImage(c, 0, 0, W, H);
+        FNAF.drawNoise(ctx, 0.06);
+        FNAF.text(ctx, 'GAME OVER', 40, 30, { size: 34, bold: true, color: '#999' });
+        return;
+      }
       // backstage-like floor
       let g = ctx.createLinearGradient(0, 300, 0, 720); g.addColorStop(0, '#0a0a0c'); g.addColorStop(1, '#2a2a30');
       ctx.fillStyle = g; ctx.fillRect(0, 300, W, 420);
@@ -298,7 +315,9 @@
         const cx = this.cardX(i);
         ctx.fillStyle = '#121214'; FNAF.roundRect(ctx, cx - 110, 130, 220, 360, 8); ctx.fill();
         ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
-        FNAF.Chars.draw(ctx, this.keys[i], 'face', cx, 345, 0.26, { dark: 0.25 });
+        const pc = FNAF.R3 && FNAF.R3.ok ? FNAF.R3.portrait(this.keys[i]) : null;
+        if (pc) ctx.drawImage(pc, cx - 105, 140, 210, 210);
+        else FNAF.Chars.draw(ctx, this.keys[i], 'face', cx, 345, 0.26, { dark: 0.25 });
         FNAF.text(ctx, this.names[i], cx, 358, { size: 26, bold: true, color: '#eee', align: 'center' });
         FNAF.text(ctx, 'A.I. Level', cx, 392, { size: 14, color: '#999', align: 'center' });
         FNAF.text(ctx, String(this.levels[i]), cx, 426, { size: 40, bold: true, color: '#fff', align: 'center' });
@@ -389,8 +408,13 @@
     draw(ctx) {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
       if (this.t < 1.1) {
-        const mouth = (Math.floor(this.t * 16) % 2) ? 0.9 : 0.5;
-        FNAF.Chars.draw(ctx, 'golden', 'scare', 640 + FNAF.rand(-30, 30), 980 + FNAF.rand(-20, 20), 1.1, { opts: { mouth }, dark: 0.2 });
+        if (FNAF.R3 && FNAF.R3.ok) {
+          const c = FNAF.R3.renderJumpscare('golden', this.t, false);
+          if (c) ctx.drawImage(c, 0, 0, W, H);
+        } else {
+          const mouth = (Math.floor(this.t * 16) % 2) ? 0.9 : 0.5;
+          FNAF.Chars.draw(ctx, 'golden', 'scare', 640 + FNAF.rand(-30, 30), 980 + FNAF.rand(-20, 20), 1.1, { opts: { mouth }, dark: 0.2 });
+        }
         FNAF.drawNoise(ctx, 0.2);
       }
     }

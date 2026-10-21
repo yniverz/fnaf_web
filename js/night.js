@@ -96,7 +96,7 @@
         return;
       }
       if (this.monitorAnim > 0) return;
-      const h = O().hit(x, y, this.scroll);
+      const h = this.use3D() ? FNAF.R3.pickOffice(x, y) : O().hit(x, y, this.scroll);
       if (!h) return;
       if (h === 'nose') { A().honk(); return; }
       if (this.powerOut) { A().error(); return; }
@@ -272,6 +272,15 @@
     destroy() { A().stopAll(); this.phone.stop(); }
 
     /* ------------------------------------------------------------- draw */
+    use3D() { return !!(FNAF.R3 && FNAF.R3.ok); }
+    officeState() {
+      return {
+        scroll: this.scroll, leftDoor: this.leftDoor, rightDoor: this.rightDoor, leftLight: this.leftLight, rightLight: this.rightLight,
+        bonnieAtDoor: this.bonnie.pos === 'LDOOR', chicaAtDoor: this.chica.pos === 'RDOOR', fanAngle: this.fanAngle,
+        powerOut: this.powerOut, freddyEyes: this.eyes, golden: this.golden.inOffice, t: this.t,
+        leftDisabled: this.leftDisabled, rightDisabled: this.rightDisabled, lightFlicker: this.flicker,
+      };
+    }
     roomState() {
       return {
         bonnie: this.bonnie.pos, chica: this.chica.pos, freddy: this.freddy.pos,
@@ -283,13 +292,10 @@
       if (this.state === 'scare' || this.state === 'done') { this.drawJumpscare(ctx); return; }
       ctx.save();
       if (this.shake > 0) ctx.translate((Math.random() - 0.5) * 24 * this.shake, (Math.random() - 0.5) * 24 * this.shake);
+      const use3D = this.use3D();
       if (this.monitorAnim < 1) {
-        O().draw(ctx, {
-          scroll: this.scroll, leftDoor: this.leftDoor, rightDoor: this.rightDoor, leftLight: this.leftLight, rightLight: this.rightLight,
-          bonnieAtDoor: this.bonnie.pos === 'LDOOR', chicaAtDoor: this.chica.pos === 'RDOOR', fanAngle: this.fanAngle,
-          powerOut: this.powerOut, freddyEyes: this.eyes, golden: this.golden.inOffice, t: this.t,
-          leftDisabled: this.leftDisabled, rightDisabled: this.rightDisabled, lightFlicker: this.flicker,
-        });
+        if (use3D) { const c = FNAF.R3.renderOffice(this.officeState()); if (c) ctx.drawImage(c, 0, 0, FNAF.W, FNAF.H); }
+        else O().draw(ctx, this.officeState());
       }
       if (this.monitorAnim > 0) {
         ctx.save();
@@ -297,7 +303,9 @@
         // flip: the monitor rises from the bottom edge
         ctx.translate(0, FNAF.H); ctx.scale(1, a); ctx.translate(0, -FNAF.H);
         ctx.beginPath(); ctx.rect(0, 0, FNAF.W, FNAF.H); ctx.clip();
-        M().draw(ctx, { cam: this.cam, hoverCam: this.hoverCam, burst: this.burst, t: this.t, room: this.roomState(), callActive: this.phone.active, muted: this.phone.muted });
+        const ms = { cam: this.cam, hoverCam: this.hoverCam, burst: this.burst, t: this.t, room: this.roomState(), callActive: this.phone.active, muted: this.phone.muted };
+        if (use3D) { const rs = this.roomState(); rs.burst = this.burst; ms.feed3d = FNAF.R3.renderCam(this.cam, rs); }
+        M().draw(ctx, ms);
         if (a < 1) { ctx.fillStyle = 'rgba(0,0,0,' + (1 - a) * 0.6 + ')'; ctx.fillRect(0, 0, FNAF.W, FNAF.H); }
         ctx.restore();
       }
@@ -320,7 +328,7 @@
         ctx.restore();
       }
       if (this.golden.inOffice) { FNAF.drawNoise(ctx, 0.12); }
-      FNAF.drawGrain(ctx, 0.35);
+      if (!use3D) FNAF.drawGrain(ctx, 0.35);
       if (this.fade > 0) { ctx.fillStyle = 'rgba(0,0,0,' + this.fade + ')'; ctx.fillRect(0, 0, FNAF.W, FNAF.H); }
     }
     drawHUD(ctx) {
@@ -345,6 +353,12 @@
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, FNAF.W, FNAF.H);
       if (t > 1.15) { FNAF.drawNoise(ctx, 1); return; }
       const name = js.name;
+      if (this.use3D()) {
+        const c = FNAF.R3.renderJumpscare(name, t, this.powerOut);
+        if (c) ctx.drawImage(c, 0, 0, FNAF.W, FNAF.H);
+        if (t < 0.08) { ctx.fillStyle = 'rgba(255,255,255,' + (1 - t / 0.08) * 0.7 + ')'; ctx.fillRect(0, 0, FNAF.W, FNAF.H); }
+        return;
+      }
       const sc = 1.0 + Math.min(t, 0.5) * 1.1;
       const mouth = (Math.floor(t * 14) % 2) ? 0.9 : 0.55;
       const sx = (Math.random() - 0.5) * 70, sy = (Math.random() - 0.5) * 50;

@@ -31,14 +31,23 @@
       FNAF.Audio.init();
       FNAF.Audio.setVolume(this.save.volume);
       FNAF.Audio.resume();
-      FNAF.buildTextures();
-      FNAF.Chars.prewarm();
-      FNAF.Rooms.prewarm();
-      FNAF.Office.init();
-      this.boot.classList.add('hidden');
-      this.bindInput();
-      this.setScreen(new FNAF.Screens.Warning(this));
-      requestAnimationFrame(ts => this.loop(ts));
+      const status = document.getElementById('boot-status');
+      const btn = document.getElementById('boot-btn');
+      btn.disabled = true; btn.textContent = 'LOADING...';
+      if (status) status.textContent = 'Building Freddy Fazbear\'s Pizza...';
+      setTimeout(() => {
+        FNAF.buildTextures();
+        FNAF.Chars.prewarm();
+        FNAF.Office.init();
+        let ok = false;
+        if (FNAF.R3 && FNAF.R3.init) { try { ok = FNAF.R3.init(); } catch (e) { console.error(e); ok = false; } }
+        if (!ok) { FNAF.Rooms.prewarm(); console.warn('WebGL renderer unavailable, using the 2D fallback'); }
+        this.use3D = ok;
+        this.boot.classList.add('hidden');
+        this.bindInput();
+        this.setScreen(new FNAF.Screens.Warning(this));
+        requestAnimationFrame(ts => this.loop(ts));
+      }, 40);
     }
 
     toCanvas(cx, cy) {
