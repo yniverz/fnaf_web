@@ -325,12 +325,12 @@ export class Building {
     S.add(mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.16, 6), M.plastic('#eeeeee', 0.5), [-0.54, 1.0, -1.3], [0.3, 0, 0.2]));
     this.cupcake([1.7, 0.82, -1.95]);
     // posters & drawings on the back wall
-    this.poster('celebrate', -0.4, 1.95, -2.41, 0.62, 0.78);
-    this.poster('rules', 0.95, 1.95, -2.41, 0.36, 0.46);
-    for (let i = 0; i < 3; i++) { const d = mesh(new THREE.PlaneGeometry(0.2, 0.26), M.drawing(300 + i), [-2.2 + i * 0.3, 1.95 + (i % 2) * 0.1, -2.41]); d.castShadow = false; S.add(d); }
+    this.poster('celebrate', -0.4, 1.7, -2.41, 0.62, 0.78);
+    this.poster('rules', 0.95, 1.78, -2.41, 0.36, 0.46);
+    for (let i = 0; i < 3; i++) { const d = mesh(new THREE.PlaneGeometry(0.2, 0.26), M.drawing(300 + i), [-2.2 + i * 0.3, 1.75 + (i % 2) * 0.1, -2.41]); d.castShadow = false; S.add(d); }
     // nose hit box (invisible)
     const nose = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), new THREE.MeshBasicMaterial({ visible: false }));
-    nose.position.set(-0.4, 1.95 + 0.08, -2.4); nose.name = 'nose'; S.add(nose); P.nose = nose;
+    nose.position.set(-0.4, 1.7 + 0.08, -2.4); nose.name = 'nose'; S.add(nose); P.nose = nose;
     // doors (sliding down from the ceiling)
     const doorMat = M.metal();
     const mkDoor = (x) => {
@@ -463,8 +463,8 @@ export class Building {
   buildHalls() {
     const S = this.scene;
     // posters & props in the halls
-    this.poster('celebrate', -6.41, 1.75, -9.5, 0.7, 0.88, Math.PI / 2);
-    this.poster('rules', 6.41, 1.75, -9.5, 0.5, 0.64, -Math.PI / 2);
+    this.poster('celebrate', -6.41, 1.6, -9.5, 0.7, 0.88, Math.PI / 2);
+    this.poster('rules', 6.41, 1.65, -9.5, 0.5, 0.64, -Math.PI / 2);
     this.trashCan(-4.85, -6.5); this.trashCan(4.85, -6.5);
     for (let z = -4; z > -17; z -= 3.5) { this.fixture([-5.5, 3.13, z], false); this.fixture([5.5, 3.13, z], false); }
     // hall lights: dim, flickering tube at the far end
@@ -474,9 +474,9 @@ export class Building {
       this.light(id, 'spot', 0x8090c0, 18, [x, 3.1, -4.5], [x, 0, -5], { angle: 1.2, penumbra: 0.9, distance: 9 });
     }
     // corners
-    this.poster('celebrate', -5.1, 1.7, -2.12, 0.6, 0.76, 0);
-    this.goldenPoster = this.poster('golden', -5.1, 1.7, -2.115, 0.6, 0.76, 0); this.goldenPoster.visible = false;
-    for (let i = 0; i < 4; i++) { const d = mesh(new THREE.PlaneGeometry(0.26, 0.33), M.drawing(400 + i), [4.3 + i * 0.5, 1.75 + (i % 2) * 0.12, -2.12]); d.castShadow = false; S.add(d); }
+    this.poster('celebrate', -5.1, 1.6, -2.12, 0.6, 0.76, 0);
+    this.goldenPoster = this.poster('golden', -5.1, 1.6, -2.115, 0.6, 0.76, 0); this.goldenPoster.visible = false;
+    for (let i = 0; i < 4; i++) { const d = mesh(new THREE.PlaneGeometry(0.26, 0.33), M.drawing(400 + i), [4.3 + i * 0.5, 1.65 + (i % 2) * 0.12, -2.12]); d.castShadow = false; S.add(d); }
     this.light('2B', 'spot', 0xffe0c0, 24, [-6.0, 3.1, 0.2], [-5.0, 0, -1.4], { angle: 1.0, penumbra: 0.8, distance: 9, shadow: true });
     this.light('4B', 'spot', 0xffe0c0, 26, [4.6, 3.1, 0.3], [4.4, 0, -1.6], { angle: 0.9, penumbra: 0.8, distance: 9, shadow: true });
     // kitchen door on the east hall

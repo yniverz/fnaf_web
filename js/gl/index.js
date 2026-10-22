@@ -92,12 +92,14 @@ R3.renderOffice = function (st) {
   P.rightDoor.position.y = 3.6 - 2.4 * (st.rightDoor || 0);
   const flick = st.lightFlicker === undefined ? 1 : st.lightFlicker;
   const po = !!st.powerOut;
-  P.leftLight.visible = !!st.leftLight && !po; P.leftLight.intensity = P.leftLight.userData.base * flick;
-  P.rightLight.visible = !!st.rightLight && !po; P.rightLight.intensity = P.rightLight.userData.base * flick;
-  P.ceilingLight.visible = !po; P.monitorGlow.visible = !po;
-  P.monitorGlow.intensity = P.monitorGlow.userData.base * (0.8 + 0.2 * Math.sin(t * 37));
+  // every office light stays registered (constant shader configuration); unused ones run at zero intensity
+  P.leftLight.intensity = (st.leftLight && !po) ? P.leftLight.userData.base * flick : 0;
+  P.rightLight.intensity = (st.rightLight && !po) ? P.rightLight.userData.base * flick : 0;
+  P.ceilingLight.intensity = po ? 0 : P.ceilingLight.userData.base;
+  P.monitorGlow.intensity = po ? 0 : P.monitorGlow.userData.base * (0.8 + 0.2 * Math.sin(t * 37));
   B.hemi.intensity = po ? 0.3 : 0.08;
-  P.eyeLight.visible = po && st.freddyEyes > 0; P.eyeLight.intensity = (st.freddyEyes || 0) * P.eyeLight.userData.base * (0.7 + 0.3 * Math.random());
+  P.eyeLight.intensity = (po && st.freddyEyes > 0) ? st.freddyEyes * P.eyeLight.userData.base * (0.7 + 0.3 * Math.random()) : 0;
+  scareLight.intensity = 0; flashLight.intensity = 0;
   // screens
   if (!po) { TX.updateStatic(); for (const s of P.screens) s.material = M.screen(); } else for (const s of P.screens) s.material = M.screenOff();
   // buttons
@@ -154,6 +156,7 @@ R3.renderCam = function (id, st) {
     B.place(B.rigs.foxy, [-5.5, z, 0], 'run', (st.foxy.runT * 4.5) % 1, t);
   }
   // camera with slow pan
+  scareLight.intensity = 0; flashLight.intensity = 0;
   const cam = c.camera;
   cam.fov = c.fov; cam.updateProjectionMatrix();
   const pan = c.pan * Math.sin(t * 0.28 + sd.phase);
@@ -173,8 +176,9 @@ R3.renderJumpscare = function (name, t, powerOut) {
   const B = building, P = B.officeParts;
   B.hideAll();
   B.setActiveLights(['office']);
-  P.leftLight.visible = false; P.rightLight.visible = false;
-  P.ceilingLight.visible = !powerOut; P.monitorGlow.visible = !powerOut; P.eyeLight.visible = false;
+  P.leftLight.intensity = 0; P.rightLight.intensity = 0; P.eyeLight.intensity = 0;
+  P.ceilingLight.intensity = powerOut ? 0 : P.ceilingLight.userData.base; P.monitorGlow.intensity = powerOut ? 0 : P.monitorGlow.userData.base;
+  B.hemi.intensity = powerOut ? 0.3 : 0.08;
   const rig = B.rigs[name];
   const k = Math.min(1, t / 0.28);
   const cam = P.camera;
@@ -252,5 +256,32 @@ R3.portrait = function (name) {
   portraitCache[name] = c;
   return c;
 };
+
+/* Warm-up: render every lighting configuration once so shaders compile, textures upload and shadow maps
+ * are allocated before the player sees them. Run one step per frame (see main.js). */
+R3.warmupTasks = [];
+R3.buildWarmup = function () {
+  if (!R3.ok) return;
+  const room = { bonnie: '1B', chica: '1B', freddy: '1B', foxy: { stage: 1, running: true, runT: 0.5 }, golden: true, itsMe: false, t: 1, burst: 0 };
+  const office = { scroll: 160, leftDoor: 0, rightDoor: 0, leftLight: false, rightLight: false, fanAngle: 0, t: 1, lightFlicker: 1 };
+  const tasks = [];
+  tasks.push(() => R3.renderOffice(office));
+  tasks.push(() => R3.renderOffice(Object.assign({}, office, { leftLight: true, rightLight: true, bonnieAtDoor: true, chicaAtDoor: true, leftDoor: 1, rightDoor: 1 })));
+  tasks.push(() => R3.renderOffice(Object.assign({}, office, { powerOut: true, freddyEyes: 1, golden: true })));
+  for (const id of Object.keys(building.cams)) if (id !== '6') tasks.push(() => R3.renderCam(id, Object.assign({}, room, { bonnie: id, chica: id, freddy: id })));
+  for (const n of ['freddy', 'bonnie', 'chica', 'foxy', 'golden']) tasks.push(() => R3.renderJumpscare(n, 0.3, false));
+  tasks.push(() => R3.renderMenuFace(1, 0));
+  tasks.push(() => R3.renderGameOver(1));
+  for (const n of ['freddy', 'bonnie', 'chica', 'foxy']) tasks.push(() => R3.portrait(n));
+  R3.warmupTasks = tasks;
+  R3.warmupTotal = tasks.length;
+};
+R3.warmupStep = function () {
+  if (!R3.warmupTasks.length) return true;
+  const t = R3.warmupTasks.shift();
+  try { t(); } catch (e) { console.error('warmup', e); }
+  return R3.warmupTasks.length === 0;
+};
+R3.warmupProgress = function () { return R3.warmupTotal ? 1 - R3.warmupTasks.length / R3.warmupTotal : 1; };
 
 window.dispatchEvent(new Event('fnaf-r3-loaded'));

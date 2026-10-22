@@ -18,16 +18,22 @@
   /* ----------------------------------------------------------- warning */
   S.Warning = class {
     constructor(app) { this.app = app; this.t = 0; }
-    update(dt) { this.t += dt; if (this.t > 4) this.app.toMenu(); }
+    ready() { return !(FNAF.R3 && FNAF.R3.ok && FNAF.R3.warmupTasks.length); }
+    update(dt) { this.t += dt; if (this.t > 4 && this.ready()) this.app.toMenu(); }
     draw(ctx) {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
       FNAF.text(ctx, 'WARNING', 640, 230, { size: 42, bold: true, color: '#ddd', align: 'center' });
       FNAF.text(ctx, 'This game contains flashing lights and loud, sudden noises.', 640, 310, { size: 24, color: '#bbb', align: 'center' });
       FNAF.text(ctx, 'Headphones are recommended. Click to start, press F for fullscreen.', 640, 350, { size: 20, color: '#888', align: 'center' });
+      if (!this.ready()) {
+        const p = FNAF.R3.warmupProgress();
+        FNAF.text(ctx, 'Preparing the building... ' + Math.round(p * 100) + '%', 640, 520, { size: 16, color: '#666', align: 'center' });
+        ctx.fillStyle = '#222'; ctx.fillRect(440, 550, 400, 6); ctx.fillStyle = '#777'; ctx.fillRect(440, 550, 400 * p, 6);
+      }
       FNAF.drawGrain(ctx, 0.3);
     }
-    onClick() { this.app.toMenu(); }
-    onKey() { this.app.toMenu(); }
+    onClick() { if (this.ready()) this.app.toMenu(); }
+    onKey() { if (this.ready()) this.app.toMenu(); }
     onMove() { }
   };
 

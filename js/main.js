@@ -43,6 +43,7 @@
         if (FNAF.R3 && FNAF.R3.init) { try { ok = FNAF.R3.init(); } catch (e) { console.error(e); ok = false; } }
         if (!ok) { FNAF.Rooms.prewarm(); console.warn('WebGL renderer unavailable, using the 2D fallback'); }
         this.use3D = ok;
+        if (ok) FNAF.R3.buildWarmup();
         this.boot.classList.add('hidden');
         this.bindInput();
         this.setScreen(new FNAF.Screens.Warning(this));
@@ -101,6 +102,7 @@
       const dt = Math.min(0.05, (ts - this.last) / 1000 || 0.016);
       this.last = ts;
       try {
+        if (this.use3D && FNAF.R3.warmupTasks.length) FNAF.R3.warmupStep();
         if (this.screen) { this.screen.update(dt); this.screen.draw(this.ctx); }
       } catch (e) { console.error(e); }
       requestAnimationFrame(t => this.loop(t));
