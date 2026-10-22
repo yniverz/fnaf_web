@@ -11,17 +11,18 @@
   const pick = FNAF.pick, randInt = FNAF.randInt;
 
   class Base {
-    constructor(name, ai) { this.name = name; this.ai = ai; this.timer = Math.random() * 2; this.interval = AI.INTERVAL[name]; this.inOffice = false; }
+    constructor(name, ai) { this.name = name; this.ai = ai; this.timer = Math.random() * 2; this.base = AI.INTERVAL[name]; this.interval = this.jitter(); this.inOffice = false; }
     roll() { return randInt(1, 20) <= this.ai; }
+    /* same average as the original, but no countable rhythm */
+    jitter() { return this.base * (0.6 + Math.random() * 0.8); }
+    due(dt) { this.timer += dt; if (this.timer < this.interval) return false; this.timer -= this.interval; this.interval = this.jitter(); return true; }
   }
 
   class Bonnie extends Base {
     constructor(ai) { super('bonnie', ai); this.pos = '1A'; }
     update(dt, N) {
       if (this.inOffice) return;
-      this.timer += dt;
-      if (this.timer < this.interval) return;
-      this.timer -= this.interval;
+      if (!this.due(dt)) return;
       if (!this.roll()) return;
       this.move(N);
     }
@@ -49,9 +50,7 @@
     constructor(ai) { super('chica', ai); this.pos = '1A'; }
     update(dt, N) {
       if (this.inOffice) return;
-      this.timer += dt;
-      if (this.timer < this.interval) return;
-      this.timer -= this.interval;
+      if (!this.due(dt)) return;
       if (!this.roll()) return;
       this.move(N);
     }
@@ -79,11 +78,7 @@
     constructor(ai) { super('freddy', ai); this.pos = '1A'; this.pending = false; }
     update(dt, N) {
       if (this.inOffice) return;
-      this.timer += dt;
-      if (this.timer >= this.interval) {
-        this.timer -= this.interval;
-        if (this.roll()) this.pending = true;
-      }
+      if (this.due(dt) && this.roll()) this.pending = true;
       if (!this.pending) return;
       if (this.pos === '1A' && (N.bonnie.pos === '1A' || N.chica.pos === '1A')) { this.pending = false; return; }
       if (this.pos === '4B') return;             // resolved when the monitor comes down (onMonitorDown)
@@ -129,9 +124,7 @@
         return;
       }
       if (this.cooldown > 0) this.cooldown -= dt;
-      this.timer += dt;
-      if (this.timer < this.interval) return;
-      this.timer -= this.interval;
+      if (!this.due(dt)) return;
       if (N.monitorUp || this.cooldown > 0) return;
       if (!this.roll()) return;
       this.stage++;

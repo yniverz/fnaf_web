@@ -33,20 +33,29 @@
       this.shake = 0; this.itsMe = FNAF.chance(0.05);
       this.kitchenMusic = false;
       this.hallFootT = 0;
+      this.stareT = 0; this.variants = {}; this.rerollVariant('bonnie'); this.rerollVariant('chica'); this.rerollVariant('freddy');
+      this.dirT = FNAF.rand(35, 60); this.halluc = null; this.hallucFrames = 0; this.chatterT = 0; this.breathL = false; this.breathR = false;
+      this.pressureLevel = 0;
       A().fan(true); A().ambience(true);
       // tiny chance the office is just dark and quiet for a moment
       this.started = true;
     }
 
     /* ----------------------------------------------------------- AI hooks */
+    rerollVariant(name) { this.variants[name] = { variant: FNAF.randInt(0, 3), faceOff: FNAF.rand(-0.7, 0.7) }; }
+    sideOf(pos) { return ['2A', '2B', '3', '5', 'LDOOR'].includes(pos) ? -1 : ['4A', '4B', '6', '7', 'RDOOR'].includes(pos) ? 1 : 0; }
     notifyMove(name, from, to) {
       if (this.monitorUp && (this.cam === from || this.cam === to)) { this.burst = Math.max(this.burst, 0.8); A().camSwitch(); }
+      if (name !== 'foxy') this.rerollVariant(name);
       if (name === 'bonnie' || name === 'chica') {
         const close = ['2B', '4B', 'LDOOR', 'RDOOR', '3'].includes(to) || ['2B', '4B', 'LDOOR', 'RDOOR'].includes(from);
-        A().footsteps(FNAF.randInt(2, 4), close ? 0.45 : 0.16, 1);
+        const pan = this.sideOf(to) * (close ? 0.75 : 0.35);
+        A().footsteps(FNAF.randInt(2, 4), close ? 0.4 : 0.14, 1, pan);
+        if ((to === '2B' || to === '4B') && FNAF.chance(0.7)) setTimeout(() => { if (this.state === 'play') A().servo(this.sideOf(to) * 0.8, 0.16); }, 600 + Math.random() * 1500);
         if (to === '6' && name === 'chica') this.potsT = 1.5;
         if (to === 'LDOOR' || to === 'RDOOR') this.moanT = FNAF.rand(1.5, 4);
       }
+      if (name === 'freddy' && (to === '4A' || to === '4B') && FNAF.chance(0.5)) setTimeout(() => { if (this.state === 'play') A().distantThud(0.6, 0.18); }, 400 + Math.random() * 1200);
       if (name === 'foxy' && to !== 'gone') A().creak();
       if (name === 'freddy' && to === '6' && this.monitorUp && this.cam === '6') this.updateKitchenMusic();
     }
@@ -61,7 +70,7 @@
       if (name === 'freddy' && !this.monitorUp) this.intruder.timer = FNAF.rand(0.8, 2.5);
       A().glitch();
     }
-    animatronicBlocked(side, name) { A().footsteps(3, 0.3, 1.2); }
+    animatronicBlocked(side, name) { A().footsteps(3, 0.3, 1.2, side === 'left' ? -0.7 : 0.7); A().pressureCut(); this.pressureLevel = 0; }
     foxyRunStart() {
       A().foxyRun();
       if (this.monitorUp && this.cam === '2A') this.burst = Math.max(this.burst, 0.5);
@@ -111,7 +120,7 @@
     }
     switchCam(id) {
       if (id === this.cam) return;
-      this.cam = id; this.burst = 1; A().camSwitch();
+      this.cam = id; this.burst = 1; A().camSwitch(); this.stareT = 0;
       if (id !== '2B') this.golden.poster = false;
       else if (!this.golden.poster && FNAF.chance(1 / 250)) this.golden.poster = true;
       this.updateKitchenMusic();
@@ -128,13 +137,15 @@
       else { this.monitorTarget = 0; A().camDown(); A().staticLoop(false); }
     }
     onMonitorFullyUp() {
-      this.monitorUp = true;
+      this.monitorUp = true; this.stareT = 0;
       if (this.golden.inOffice) { this.golden.inOffice = false; }
       this.updateKitchenMusic();
       this.hoverCam = M().hit(this.mouse.x, this.mouse.y, false);
     }
     onMonitorFullyDown() {
       this.monitorUp = false;
+      // what you come back to is not quite what you left
+      for (const n of ['bonnie', 'chica', 'freddy']) if (FNAF.chance(0.4)) this.rerollVariant(n);
       this.foxy.onMonitorDown();
       this.updateKitchenMusic();
       if (this.intruder) { this.triggerJumpscare(this.intruder.name); return; }
@@ -188,8 +199,14 @@
         this.scroll = FNAF.clamp(this.scroll, 0, O().MAX_SCROLL);
       }
       this.fanAngle += dt * (this.powerOut ? 0 : 22);
-      this.flicker = 1 - (Math.random() < 0.08 ? Math.random() * 0.5 : 0);
+      const someoneInDoor = (this.leftLight && this.bonnie.pos === 'LDOOR') || (this.rightLight && this.chica.pos === 'RDOOR');
+      this.flicker = someoneInDoor ? (Math.random() < 0.3 ? 0.1 + Math.random() * 0.7 : 1) : 1 - (Math.random() < 0.08 ? Math.random() * 0.5 : 0);
       this.shake = Math.max(0, this.shake - dt * 2.5);
+      if (this.monitorUp) this.stareT += dt;
+      // hallucinations: a figure in the corner for two frames, only while something is close
+      if (this.hallucFrames > 0) { this.hallucFrames--; if (this.hallucFrames === 0) this.halluc = null; }
+      else if (!this.monitorUp && !this.powerOut && this.threatLevel() > 0.5 && FNAF.chance(0.0009)) { this.halluc = FNAF.chance(0.5) ? 'bonnie' : 'freddy'; this.hallucFrames = 2; A().glitch(); }
+      this.director(dt);
 
       // power
       if (!this.powerOut) {
@@ -215,13 +232,6 @@
       }
       // phone
       this.phone.update(dt);
-      // ambient sound events
-      this.ambientT -= dt;
-      if (this.ambientT <= 0) {
-        this.ambientT = FNAF.rand(18, 45);
-        const r = Math.random();
-        if (r < 0.4) A().creak(); else if (r < 0.6) A().childLaugh(); else if (r < 0.8) A().footsteps(2, 0.12, 0.8); else A().endoClank();
-      }
       if (this.chica.pos === '6' && !this.powerOut) {
         this.potsT -= dt;
         if (this.potsT <= 0) { this.potsT = FNAF.rand(2.5, 7); A().pots(this.monitorUp && this.cam === '6' ? 0.5 : 0.14); }
@@ -233,6 +243,44 @@
       if (this.intruder) { this.glitchT -= dt; if (this.glitchT <= 0) { this.glitchT = FNAF.rand(0.8, 3); A().glitch(); this.burst = Math.max(this.burst, 0.4); } }
     }
 
+    /* how close the nearest threat is, 0..1 */
+    threatLevel() {
+      if (this.powerOut) return 0;
+      const b = { LDOOR: 1, '2B': 0.6, '2A': 0.3, '3': 0.3 }[this.bonnie.pos] || 0;
+      const c = { RDOOR: 1, '4B': 0.6, '4A': 0.3 }[this.chica.pos] || 0;
+      const f = { '4B': 0.8, '4A': 0.4 }[this.freddy.pos] || 0;
+      const x = this.foxy.left ? 1 : this.foxy.stage >= 3 ? 0.7 : this.foxy.stage === 2 ? 0.3 : 0;
+      return Math.max(b, c, f, x);
+    }
+    /* ambience director: irregular, information-carrying, sometimes lying */
+    director(dt) {
+      // sub-bass pressure follows the threat
+      const lvl = this.threatLevel();
+      if (Math.abs(lvl - this.pressureLevel) > 0.05) { this.pressureLevel = lvl; A().pressure(lvl); }
+      // breathing at the doors (unseen, panned)
+      const bl = this.bonnie.pos === 'LDOOR' && !this.powerOut, br = this.chica.pos === 'RDOOR' && !this.powerOut;
+      if (bl !== this.breathL) { this.breathL = bl; A().breathLoop('L', bl); }
+      if (br !== this.breathR) { this.breathR = br; A().breathLoop('R', br); }
+      this.dirT -= dt;
+      if (this.dirT > 0) return;
+      // long silences happen, and they are the point
+      this.dirT = FNAF.chance(0.22) ? FNAF.rand(50, 95) : FNAF.rand(12, 38);
+      const nearL = ['2A', '2B', '3'].includes(this.bonnie.pos) || this.foxy.stage >= 2;
+      const nearR = ['4A', '4B'].includes(this.chica.pos) || ['4A', '4B'].includes(this.freddy.pos);
+      const r = Math.random();
+      if ((nearL || nearR) && r < 0.55) {
+        // a real hint from the side the threat is on
+        const side = nearL && nearR ? (FNAF.chance(0.5) ? -1 : 1) : nearL ? -1 : 1;
+        if (FNAF.chance(0.5)) A().servo(side * 0.85, 0.15); else A().footsteps(FNAF.randInt(1, 3), 0.18, 0.8, side * 0.8);
+      } else if (r < 0.68) {
+        // a decoy: the same cue from a side with nobody near (rare enough that the cues stay trustworthy)
+        const side = FNAF.chance(0.5) ? -1 : 1;
+        if (FNAF.chance(0.6)) A().servo(side * 0.85, 0.12); else A().scrape(side * 0.6, 0.12);
+      } else {
+        const k = Math.random();
+        if (k < 0.3) A().creak(); else if (k < 0.5) A().childLaugh(); else if (k < 0.7) A().scrape(FNAF.rand(-0.6, 0.6), 0.12); else if (k < 0.85) A().distantThud(FNAF.rand(-0.5, 0.5), 0.2); else A().endoClank();
+      }
+    }
     usage() {
       let u = 1 + (this.leftDoorClosed ? 1 : 0) + (this.rightDoorClosed ? 1 : 0) + (this.leftLight ? 1 : 0) + (this.rightLight ? 1 : 0) + (this.monitorTarget ? 1 : 0);
       return Math.min(5, u);
@@ -259,6 +307,8 @@
         if (this.poTick >= 5) { this.poTick = 0; if (FNAF.chance(0.2)) { this.poStage = 2; this.eyes = 0; A().musicStop(); } }
       } else if (this.poStage === 2) {
         this.poTick += dt;
+        this.chatterT -= dt;
+        if (this.chatterT <= 0) { this.chatterT = FNAF.rand(2, 6); A().chatter(0.1, FNAF.rand(-0.8, 0.8)); }
         if (this.poTick >= 2) { this.poTick = 0; if (FNAF.chance(0.2)) this.triggerJumpscare('freddy'); }
       }
     }
@@ -279,13 +329,14 @@
         bonnieAtDoor: this.bonnie.pos === 'LDOOR', chicaAtDoor: this.chica.pos === 'RDOOR', fanAngle: this.fanAngle,
         powerOut: this.powerOut, freddyEyes: this.eyes, golden: this.golden.inOffice, t: this.t,
         leftDisabled: this.leftDisabled, rightDisabled: this.rightDisabled, lightFlicker: this.flicker,
+        power: this.power, halluc: this.halluc,
       };
     }
     roomState() {
       return {
         bonnie: this.bonnie.pos, chica: this.chica.pos, freddy: this.freddy.pos,
         foxy: { stage: this.foxy.stage, running: this.foxy.running, runT: this.foxy.runT },
-        golden: this.golden.poster, itsMe: this.itsMe, t: this.t,
+        golden: this.golden.poster, itsMe: this.itsMe, t: this.t, stare: this.stareT, variants: this.variants,
       };
     }
     draw(ctx) {

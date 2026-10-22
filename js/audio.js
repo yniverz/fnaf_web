@@ -50,6 +50,14 @@
   /* ---- primitives --------------------------------------------------------- */
   function bus(o) { return (o && o.bus === 'amb') ? A.ambBus : A.sfxBus; }
 
+  function applyPan(node, pan) {
+    if (!pan || !A.ctx.createStereoPanner) return node;
+    const pn = A.ctx.createStereoPanner();
+    pn.pan.value = Math.max(-1, Math.min(1, pan));
+    node.connect(pn);
+    return pn;
+  }
+
   function applyFilter(node, f) {
     if (!f) return node;
     const fl = A.ctx.createBiquadFilter();
@@ -85,7 +93,7 @@
       g.gain.setValueAtTime(peak, t + Math.max(atk, dur - rel));
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.01);
     }
-    node.connect(g); g.connect(o.dest || bus(o));
+    node.connect(g); applyPan(g, o.pan).connect(o.dest || bus(o));
     src.start(t);
     if (!o.loop) src.stop(t + dur + 0.05);
     return { src, gain: g, filter: filterNode, stop: (fade) => {
@@ -125,7 +133,7 @@
       const lg = A.ctx.createGain(); lg.gain.value = o.tremolo[1] * peak;
       lfo.connect(lg); lg.connect(g.gain); lfo.start(t); lfo.stop(t + dur + 0.1);
     }
-    node.connect(g); g.connect(o.dest || bus(o));
+    node.connect(g); applyPan(g, o.pan).connect(o.dest || bus(o));
     os.start(t); os.stop(t + dur + 0.05);
     return { src: os, gain: g };
   };
@@ -142,12 +150,12 @@
     for (const s of l.sources) { try { s.stop(n + (fade || 0.1) + 0.05); } catch (e) { } }
   };
 
-  function makeLoop(name, build, fadeIn, target, toBus) {
+  function makeLoop(name, build, fadeIn, target, toBus, pan) {
     if (!A.ctx || A.loops[name]) return;
     const g = A.ctx.createGain();
     g.gain.setValueAtTime(0.0001, A.now());
     g.gain.exponentialRampToValueAtTime(target, A.now() + (fadeIn || 0.2));
-    g.connect(toBus || A.ambBus);
+    applyPan(g, pan).connect(toBus || A.ambBus);
     const sources = build(g);
     A.loops[name] = { gain: g, sources };
   }
@@ -265,15 +273,104 @@
   };
   A.blip = function () { if (A.ctx) A.osc({ type: 'square', freq: 900, dur: 0.03, gain: 0.05, attack: 0.002, release: 0.01 }); };
 
-  A.footsteps = function (count, vol, rate) {
+  A.footsteps = function (count, vol, rate, pan) {
     if (!A.ctx) return;
-    count = count || 3; vol = vol || 0.3; rate = rate || 1;
+    count = count || 3; vol = vol || 0.3; rate = rate || 1; pan = pan || 0;
     const t0 = A.now();
     for (let i = 0; i < count; i++) {
-      const t = t0 + i * 0.46 / rate;
-      A.playBuf(A.brownBuf, { t, dur: 0.14, filter: ['lowpass', 220, 1], gain: vol * (0.8 + Math.random() * 0.4), attack: 0.004, release: 0.1, rate: 1 + Math.random() * 0.4 });
-      A.osc({ t, type: 'sine', freq: 70, freqEnd: 40, dur: 0.12, gain: vol * 0.7, attack: 0.003, release: 0.08 });
+      const t = t0 + i * (0.4 + Math.random() * 0.14) / rate;
+      A.playBuf(A.brownBuf, { t, dur: 0.14, filter: ['lowpass', 220, 1], gain: vol * (0.8 + Math.random() * 0.4), attack: 0.004, release: 0.1, rate: 1 + Math.random() * 0.4, pan });
+      A.osc({ t, type: 'sine', freq: 70, freqEnd: 40, dur: 0.12, gain: vol * 0.7, attack: 0.003, release: 0.08, pan });
     }
+  };
+
+  /* ---- ambiguous cues (medium volume, unseen source) ---------------------- */
+  A.servo = function (pan, vol) {
+    if (!A.ctx) return;
+    vol = vol || 0.18;
+    const f = 160 + Math.random() * 120;
+    const d = 0.25 + Math.random() * 0.4;
+    A.osc({ type: 'sawtooth', freq: f, freqEnd: f * (1.4 + Math.random() * 0.6), dur: d, gain: vol, attack: 0.03, release: 0.12, filter: ['bandpass', 900, 3], vibrato: [30, 8], pan });
+    A.playBuf(A.noiseBuf, { dur: d, filter: ['bandpass', 1800, 4], gain: vol * 0.4, attack: 0.03, release: 0.1, pan });
+    A.osc({ type: 'square', freq: 48, dur: 0.08, gain: vol * 0.5, attack: 0.002, release: 0.05, t: A.now() + d, pan });
+  };
+  A.scrape = function (pan, vol) {
+    if (!A.ctx) return;
+    vol = vol || 0.14;
+    A.playBuf(A.noiseBuf, { dur: 0.55, filter: ['bandpass', 700, 5], filterEnd: 1400, gain: vol, attack: 0.08, release: 0.25, pan });
+    A.osc({ type: 'sawtooth', freq: 180, freqEnd: 260, dur: 0.5, gain: vol * 0.3, attack: 0.1, release: 0.2, filter: ['bandpass', 1200, 8], vibrato: [14, 20], pan });
+  };
+  A.distantThud = function (pan, vol) {
+    if (!A.ctx) return;
+    vol = vol || 0.22;
+    A.playBuf(A.brownBuf, { dur: 0.35, filter: ['lowpass', 120, 1], gain: vol, attack: 0.004, release: 0.3, rate: 0.7, pan });
+    A.osc({ type: 'sine', freq: 55, freqEnd: 32, dur: 0.3, gain: vol * 0.8, attack: 0.004, release: 0.25, pan });
+  };
+  A.breathLoop = function (side, on) {
+    const name = 'breath' + side;
+    if (!on) { A.stopLoop(name, 0.4); return; }
+    makeLoop(name, g => {
+      const s = A.ctx.createBufferSource(); s.buffer = A.noiseBuf; s.loop = true;
+      const f = A.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 520; f.Q.value = 1.4;
+      s.connect(f); const ng = A.ctx.createGain(); ng.gain.value = 0.0; f.connect(ng); ng.connect(g);
+      const lfo = A.ctx.createOscillator(); lfo.frequency.value = 0.21;
+      const lg = A.ctx.createGain(); lg.gain.value = 0.5; lfo.connect(lg); lg.connect(ng.gain);
+      const off = A.ctx.createConstantSource(); off.offset.value = 0.5; off.connect(ng.gain);
+      s.start(); lfo.start(); off.start();
+      return [s, lfo, off];
+    }, 1.5, 0.075, A.sfxBus, side === 'L' ? -0.8 : 0.8);
+  };
+
+  /* ---- sub-bass pressure that follows how close the threat is ------------- */
+  A.pressure = function (level) {
+    if (!A.ctx) return;
+    level = Math.max(0, Math.min(1, level || 0));
+    if (!A.loops.pressure) {
+      if (level < 0.02) return;
+      makeLoop('pressure', g => {
+        const o1 = A.ctx.createOscillator(); o1.frequency.value = 36;
+        const o2 = A.ctx.createOscillator(); o2.frequency.value = 43.6;
+        const o3 = A.ctx.createOscillator(); o3.type = 'triangle'; o3.frequency.value = 72;
+        const f = A.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 90;
+        const lfo = A.ctx.createOscillator(); lfo.frequency.value = 0.13;
+        const lg = A.ctx.createGain(); lg.gain.value = 35; lfo.connect(lg); lg.connect(f.frequency);
+        const g3 = A.ctx.createGain(); g3.gain.value = 0.25;
+        o1.connect(f); o2.connect(f); o3.connect(g3); g3.connect(f);
+        const s = A.ctx.createBufferSource(); s.buffer = A.brownBuf; s.loop = true;
+        const nf = A.ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 60;
+        const sg = A.ctx.createGain(); sg.gain.value = 0.6; s.connect(nf); nf.connect(sg); sg.connect(f);
+        f.connect(g);
+        o1.start(); o2.start(); o3.start(); lfo.start(); s.start();
+        return [o1, o2, o3, lfo, s];
+      }, 0.5, 0.0001, A.ambBus);
+    }
+    const l = A.loops.pressure; if (!l) return;
+    const n = A.now();
+    l.gain.gain.cancelScheduledValues(n);
+    l.gain.gain.setTargetAtTime(Math.max(0.0001, level * 0.55), n, 1.6);
+  };
+  A.pressureCut = function () {
+    const l = A.loops.pressure; if (!l) return;
+    const n = A.now();
+    l.gain.gain.cancelScheduledValues(n);
+    l.gain.gain.setValueAtTime(Math.max(0.0001, l.gain.gain.value), n);
+    l.gain.gain.linearRampToValueAtTime(0.0001, n + 0.12);
+  };
+
+  /* nonlinear rasp: random pitch jumps through distortion (blackout chatter) */
+  A.chatter = function (vol, pan) {
+    if (!A.ctx) return;
+    vol = vol || 0.12;
+    const t = A.now();
+    const d = 0.3 + Math.random() * 0.6;
+    const os = A.ctx.createOscillator(); os.type = 'sawtooth';
+    for (let i = 0; i * 0.03 < d; i++) os.frequency.setValueAtTime(70 + Math.random() * 330, t + i * 0.03);
+    const f = A.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 600 + Math.random() * 800; f.Q.value = 2.5;
+    const ws = A.ctx.createWaveShaper(); ws.curve = A.distCurve;
+    const g = A.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.04); g.gain.setValueAtTime(vol, t + d - 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    os.connect(f); f.connect(ws); ws.connect(g); applyPan(g, pan || 0).connect(A.sfxBus);
+    os.start(t); os.stop(t + d + 0.05);
   };
 
   A.laugh = function (vol) {
@@ -346,6 +443,15 @@
     A.osc({ t, type: 'sawtooth', freq: 920, freqEnd: 560, dur: 1.1, gain: 0.45 * v, attack: 0.004, release: 0.3, vibrato: [35, 60], dist: true });
     A.osc({ t, type: 'square', freq: 115, freqEnd: 80, dur: 1.3, gain: 0.5 * v, attack: 0.004, release: 0.3, filter: ['lowpass', 900, 1], dist: true });
     A.osc({ t, type: 'sawtooth', freq: 1800, freqEnd: 1100, dur: 0.9, gain: 0.22 * v, attack: 0.004, release: 0.3, vibrato: [40, 120], dist: true });
+    A.osc({ t, type: 'sawtooth', freq: 300, freqEnd: 1400, dur: 0.45, gain: 0.4 * v, attack: 0.004, release: 0.15, dist: true });
+    // chaotic pitch jumps (nonlinear distress-call analogue)
+    const os = A.ctx.createOscillator(); os.type = 'square';
+    for (let i = 0; i < 44; i++) os.frequency.setValueAtTime(200 + Math.random() * 900, t + i * 0.028);
+    const ws = A.ctx.createWaveShaper(); ws.curve = A.distCurve;
+    const f = A.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1500; f.Q.value = 1.2;
+    const g = A.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.45 * v, t + 0.01); g.gain.setValueAtTime(0.45 * v, t + 1.0); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.25);
+    os.connect(ws); ws.connect(f); f.connect(g); g.connect(A.sfxBus);
+    os.start(t); os.stop(t + 1.3);
   };
 
   A.chime = function () {

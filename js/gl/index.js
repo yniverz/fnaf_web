@@ -15,6 +15,7 @@ window.FNAF.R3 = R3;
 
 let renderer, scene, building, post, portraitScene, portraitRig, portraitCam, portraitLights, scareLight, flashLight;
 const camSeeds = {};
+const camLoss = {};
 const yawState = { cur: 0, lastT: -1 };
 const ray = new THREE.Raycaster();
 const camPanDir = new THREE.Vector3();
@@ -95,7 +96,11 @@ R3.renderOffice = function (st) {
   // every office light stays registered (constant shader configuration); unused ones run at zero intensity
   P.leftLight.intensity = (st.leftLight && !po) ? P.leftLight.userData.base * flick : 0;
   P.rightLight.intensity = (st.rightLight && !po) ? P.rightLight.userData.base * flick : 0;
-  P.ceilingLight.intensity = po ? 0 : P.ceilingLight.userData.base;
+  // the office dims as the power drains, with brownouts under 20%
+  const pw = st.power === undefined ? 100 : st.power;
+  const dim = 0.45 + 0.55 * Math.min(1, pw / 55);
+  const brown = pw < 20 && Math.random() < 0.08 ? 0.35 + Math.random() * 0.4 : 1;
+  P.ceilingLight.intensity = po ? 0 : P.ceilingLight.userData.base * dim * brown;
   P.monitorGlow.intensity = po ? 0 : P.monitorGlow.userData.base * (0.8 + 0.2 * Math.sin(t * 37));
   B.hemi.intensity = po ? 0.3 : 0.08;
   P.eyeLight.intensity = (po && st.freddyEyes > 0) ? st.freddyEyes * P.eyeLight.userData.base * (0.7 + 0.3 * Math.random()) : 0;
@@ -113,7 +118,12 @@ R3.renderOffice = function (st) {
   if (st.chicaAtDoor && st.rightLight && !po) B.place(B.rigs.chica, B.spots.chica.RDOOR, 'stand', 0, t);
   if (po && st.freddyEyes > 0) { B.place(B.rigs.freddy, B.spots.freddy.POWEROUT, 'stand', 0, t, 'glow'); B.rigs.freddy.group.visible = Math.random() < 0.92; }
   if (st.golden) { B.place(B.rigs.golden, B.spots.golden.OFFICE, 'slump', 0, t, 'black'); B.rigs.golden.group.visible = Math.random() < 0.9; }
-  const p = Object.assign({}, PRESET.office, { time: t, brightness: po ? 0.7 : 1, exposure: po ? 2.2 : 1.3, noiseAmt: po ? 0.13 : 0.045, flicker: po ? 0.85 + Math.random() * 0.15 : 1 });
+  // a figure in the dark corner for a frame or two
+  if (st.halluc && !st.golden) {
+    const who = st.halluc === 'bonnie' ? B.rigs.bonnie : B.rigs.freddy;
+    B.place(who, [-2.9, -2.05, 0.3], 'stand', 0, t, 'glow', { variant: 3 });
+  }
+  const p = Object.assign({}, PRESET.office, { time: t, brightness: po ? 0.7 : 1, exposure: po ? 2.2 : 1.3, noiseAmt: po ? 0.13 : 0.045 + (st.halluc ? 0.25 : 0), flicker: po ? 0.85 + Math.random() * 0.15 : 1, burst: st.halluc ? 0.25 : 0 });
   post.render(scene, P.camera, p);
   return R3.canvas;
 };
@@ -134,13 +144,19 @@ R3.renderCam = function (id, st) {
   B.hideAll();
   B.setActiveLights([id]);
   B.goldenPoster.visible = !!st.golden && id === '2B';
-  // characters
+  // characters: stance variants, and they turn their heads to the lens when stared at
+  const stare = st.stare || 0;
+  const look = Math.min(1, Math.max(0, (stare - 3) / 4));
+  let occupants = 0;
   for (const name of ['bonnie', 'chica', 'freddy']) {
     const pos = st[name];
     const spot = B.spots[name][pos];
     if (pos === id && spot) {
+      occupants++;
       const eyes = name === 'freddy' && id !== '1A' ? 'glow' : 'normal';
-      B.place(B.rigs[name], spot, 'stand', 0, t, eyes);
+      const v = (st.variants && st.variants[name]) || { variant: 0, faceOff: 0 };
+      const onStage = id === '1A';
+      B.place(B.rigs[name], spot, 'stand', 0, t, eyes, { variant: onStage ? 0 : v.variant, faceOff: onStage ? 0 : v.faceOff, look, lookYaw: -(onStage ? 0 : v.faceOff), lookPitch: -0.3 });
     }
   }
   if (id === '1C') {
@@ -164,8 +180,12 @@ R3.renderCam = function (id, st) {
   cam.lookAt(c.pos[0] + camPanDir.x, c.pos[1] + camPanDir.y, c.pos[2] + camPanDir.z);
   // light flicker on some cams
   for (const l of B.roomLights[id] || []) l.intensity = l.userData.base * (Math.random() < 0.06 ? 0.4 + Math.random() * 0.6 : 1);
-  const loss = Math.random() < 0.006 ? 0.5 + Math.random() * 0.5 : 0;
-  const p = Object.assign({}, PRESET.cam, { time: t, burst: st.burst || 0, noiseAmt: sd.noise, tint: sd.tint, tearing: sd.tear + (st.burst || 0) * 1.5, signalLoss: loss });
+  // signal drop-outs: short, and more frequent in occupied rooms
+  const cl = camLoss[id] || (camLoss[id] = { until: 0, strength: 0 });
+  if (id === '1C' && st.foxy && st.foxy.stage > 0) occupants++;
+  if (t > cl.until && Math.random() < 0.0012 + 0.0035 * occupants) { cl.until = t + 0.06 + Math.random() * 0.35; cl.strength = 0.5 + Math.random() * 0.5; }
+  const loss = t < cl.until ? cl.strength : 0;
+  const p = Object.assign({}, PRESET.cam, { time: t, burst: st.burst || 0, noiseAmt: sd.noise + loss * 0.2, tint: sd.tint, tearing: sd.tear + (st.burst || 0) * 1.5 + loss, signalLoss: loss });
   post.render(scene, cam, p);
   return R3.canvas;
 };

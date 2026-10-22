@@ -300,17 +300,45 @@ export function createAnimatronic(type, opts) {
   rig.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 
   /* poses */
-  rig.setPose = function (name, phase, t) {
-    const j = rig.J; phase = phase || 0; t = t || 0;
+  rig.setPose = function (name, phase, t, po) {
+    const j = rig.J; phase = phase || 0; t = t || 0; po = po || {};
     const z = o => { o.rotation.set(0, 0, 0); };
     ['hipL', 'hipR', 'kneeL', 'kneeR', 'shoulderL', 'shoulderR', 'elbowL', 'elbowR', 'torso', 'neck', 'jaw', 'handL', 'handR'].forEach(k => z(j[k]));
     rig.body.position.set(0, 0, 0);
     const idle = Math.sin(t * 0.7 + rig.phaseSeed) * 0.02;
     if (name === 'stand') {
-      j.neck.rotation.set(0.05 + idle, Math.sin(rig.phaseSeed) * 0.25, Math.cos(rig.phaseSeed) * 0.08);
-      j.shoulderL.rotation.set(0.1, 0, 0.12); j.shoulderR.rotation.set(-0.05, 0, -0.12);
-      j.elbowL.rotation.x = -0.25; j.elbowR.rotation.x = -0.2;
-      j.jaw.rotation.x = 0.08;
+      const v = po.variant || 0;
+      if (v === 1) {            // head down, arms forward, slight lean
+        j.torso.rotation.x = -0.1; j.neck.rotation.set(0.35 + idle, 0.15, 0.1);
+        j.shoulderL.rotation.set(-0.35, 0, 0.1); j.shoulderR.rotation.set(-0.3, 0, -0.1);
+        j.elbowL.rotation.x = -0.6; j.elbowR.rotation.x = -0.5; j.jaw.rotation.x = 0.05;
+      } else if (v === 2) {     // looking away, one shoulder dropped, mouth slack
+        j.neck.rotation.set(-0.05 + idle, -0.6, -0.25); j.torso.rotation.z = 0.06;
+        j.shoulderL.rotation.set(0.15, 0, 0.35); j.shoulderR.rotation.set(0.05, 0, -0.05);
+        j.elbowL.rotation.x = -0.15; j.elbowR.rotation.x = -0.4; j.jaw.rotation.x = 0.35;
+      } else if (v === 3) {     // hunched, head up
+        j.torso.rotation.x = -0.22; j.neck.rotation.set(-0.3 + idle, 0.05, 0.05);
+        j.shoulderL.rotation.set(0.4, 0, 0.2); j.shoulderR.rotation.set(0.45, 0, -0.2);
+        j.elbowL.rotation.x = -0.2; j.elbowR.rotation.x = -0.2; j.jaw.rotation.x = 0.2;
+        j.hipL.rotation.x = 0.15; j.kneeL.rotation.x = 0.2;
+      } else {
+        j.neck.rotation.set(0.05 + idle, Math.sin(rig.phaseSeed) * 0.25, Math.cos(rig.phaseSeed) * 0.08);
+        j.shoulderL.rotation.set(0.1, 0, 0.12); j.shoulderR.rotation.set(-0.05, 0, -0.12);
+        j.elbowL.rotation.x = -0.25; j.elbowR.rotation.x = -0.2;
+        j.jaw.rotation.x = 0.08;
+      }
+      // micro-twitch every few seconds, and a slow mechanical head drift
+      const tw = (t * 0.37 + rig.phaseSeed) % 1;
+      if (tw < 0.025) { j.neck.rotation.z += 0.14; j.neck.rotation.y -= 0.1; }
+      j.neck.rotation.y += Math.sin(t * 0.23 + rig.phaseSeed * 2) * 0.05;
+      if (((t * 0.11 + rig.phaseSeed) % 1) < 0.015) j.jaw.rotation.x += 0.3;
+      // looking into the lens: blend the head toward the camera direction
+      if (po.look) {
+        const k = po.look;
+        j.neck.rotation.y = j.neck.rotation.y * (1 - k) + (po.lookYaw || 0) * k;
+        j.neck.rotation.x = j.neck.rotation.x * (1 - k) + (po.lookPitch || 0) * k;
+        j.neck.rotation.z *= (1 - k);
+      }
     } else if (name === 'lean') {
       j.torso.rotation.x = -0.35; j.neck.rotation.set(0.4, 0.3, 0.1);
       j.hipL.rotation.x = -0.35; j.kneeL.rotation.x = 0.2; j.hipR.rotation.x = 0.2;

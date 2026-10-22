@@ -469,9 +469,9 @@ export class Building {
     for (let z = -4; z > -17; z -= 3.5) { this.fixture([-5.5, 3.13, z], false); this.fixture([5.5, 3.13, z], false); }
     // hall lights: dim, flickering tube at the far end
     for (const [id, x] of [['2A', -5.5], ['4A', 5.5]]) {
-      this.light(id, 'spot', 0xffe0c0, 70, [x, 3.1, -14.5], [x, 0, -14.5], { angle: 1.15, penumbra: 0.8, distance: 16, shadow: true });
-      this.light(id, 'spot', 0xc0c8e0, 28, [x, 3.1, -9], [x, 0, -9.5], { angle: 1.2, penumbra: 0.9, distance: 10 });
-      this.light(id, 'spot', 0x8090c0, 18, [x, 3.1, -4.5], [x, 0, -5], { angle: 1.2, penumbra: 0.9, distance: 9 });
+      this.light(id, 'spot', 0xffe0c0, 80, [x, 3.1, -14.5], [x, 0, -14.5], { angle: 1.15, penumbra: 0.8, distance: 16, shadow: true });
+      this.light(id, 'spot', 0xc0c8e0, 13, [x, 3.1, -9], [x, 0, -9.5], { angle: 1.1, penumbra: 0.9, distance: 9 });
+      this.light(id, 'spot', 0x8090c0, 5, [x, 3.1, -4.5], [x, 0, -5], { angle: 1.2, penumbra: 0.9, distance: 8 });
     }
     // corners
     this.poster('celebrate', -5.1, 1.6, -2.12, 0.6, 0.76, 0);
@@ -597,11 +597,11 @@ export class Building {
       for (const l of arr) l.visible = on;
     }
   }
-  place(rig, spot, pose, phase, t, eyes) {
+  place(rig, spot, pose, phase, t, eyes, po) {
     rig.group.visible = true;
     rig.group.position.set(spot[0], 0, spot[1]);
-    rig.group.rotation.y = spot[2];
-    rig.setPose(pose, phase, t);
+    rig.group.rotation.y = spot[2] + ((po && po.faceOff) || 0);
+    rig.setPose(pose, phase, t, po);
     rig.setEyes(eyes || (rig.type === 'golden' ? 'black' : 'normal'));
   }
   hideAll() { for (const r of Object.values(this.rigs)) r.group.visible = false; }
