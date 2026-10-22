@@ -1,0 +1,45 @@
+{
+ "night": 2,
+ "engine": "openai",
+ "model": "gpt-audio-1.5",
+ "voice": "ash",
+ "duration": 61.4,
+ "sentences": [
+  {
+   "text": "Hello? Hello? Hey, you made it to night two. Nice. I won't keep you long, since things tend to get busier from here on.",
+   "start": 0.0,
+   "end": 10.75,
+   "fx": null
+  },
+  {
+   "text": "Freddy and his friends get more active as the week goes on. It might be a good idea to glance at the cameras while I talk, just to make sure everyone is where they should be.",
+   "start": 11.2,
+   "end": 23.3,
+   "fx": null
+  },
+  {
+   "text": "Interesting fact: Freddy himself doesn't move around much unless it's pitch dark. So if the power runs out... well, then you've got a problem.",
+   "start": 23.75,
+   "end": 34.15,
+   "fx": null
+  },
+  {
+   "text": "Those lights are the only way to see past the doorway. If something's standing there, close the door. If nothing's there, don't waste the power.",
+   "start": 34.6,
+   "end": 43.95,
+   "fx": null
+  },
+  {
+   "text": "One more thing. Check Pirate Cove once in a while. The character in there is... different. He gets restless if nobody's watching him. If he's out of his curtain, shut the left door, fast.",
+   "start": 44.4,
+   "end": 57.15,
+   "fx": null
+  },
+  {
+   "text": "Alright. Good night, and good luck.",
+   "start": 57.6,
+   "end": 60.95,
+   "fx": null
+  }
+ ]
+}

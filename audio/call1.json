@@ -1,0 +1,69 @@
+{
+ "night": 1,
+ "engine": "openai",
+ "model": "gpt-audio-1.5",
+ "voice": "ash",
+ "duration": 187.5,
+ "sentences": [
+  {
+   "text": "Hello? Hello... hey, uh, okay. I'm recording this so you've got something to listen to on your first night. Figured it might help you settle in.",
+   "start": 0.0,
+   "end": 10.75,
+   "fx": null
+  },
+  {
+   "text": "I used to sit in that same chair, actually. This is my last week on the job. I know the place feels a little strange after dark, but honestly, you'll be fine.",
+   "start": 11.2,
+   "end": 29.95,
+   "fx": null
+  },
+  {
+   "text": "First, the company wants me to read you the official greeting. It's a liability thing, so bear with me.",
+   "start": 30.4,
+   "end": 38.8,
+   "fx": null
+  },
+  {
+   "text": "Welcome to Freddy Fazbear's Pizza, a magical place for kids and grown-ups alike. Fazbear Entertainment is not responsible for damage to property or person. Should damage or death be discovered, a missing person report will be filed within ninety days, or once the premises have been thoroughly cleaned and the carpets replaced.",
+   "start": 39.25,
+   "end": 63.2,
+   "fx": null
+  },
+  {
+   "text": "Okay. That sounds a lot worse than it is. There's really nothing to worry about. The characters do get a bit quirky at night, but would I still be here if there was anything to be scared of?",
+   "start": 63.65,
+   "end": 76.4,
+   "fx": null
+  },
+  {
+   "text": "So, here's the thing. The animatronics are left in a free-roaming mode at night. If they stay still for too long their servos lock up, so they're allowed to wander. They used to walk around during the day too, until... well, there was an incident a few years back. Amazing what a person can live without, you know?",
+   "start": 76.85,
+   "end": 104.8,
+   "fx": null
+  },
+  {
+   "text": "The only real problem, as far as you and I are concerned, is that if they see you after hours they probably won't recognize you as a person. They'll see a metal endoskeleton without its costume on, and that's against the rules here. So they'll try to put you into a Freddy Fazbear suit. Forcefully.",
+   "start": 105.25,
+   "end": 129.25,
+   "fx": null
+  },
+  {
+   "text": "Which wouldn't be so bad if the suits weren't packed with crossbeams and wires and mechanical parts, especially around the face. Nothing survives that, except maybe your eyes and teeth popping out the front of the mask.",
+   "start": 129.7,
+   "end": 148.65,
+   "fx": null
+  },
+  {
+   "text": "Anyway. None of that happens if you watch the cameras and close the doors when you have to. Just remember the building has a very limited power budget at night. Doors, lights, cameras, they all eat into it. Run out of power and you're wide open.",
+   "start": 149.1,
+   "end": 171.2,
+   "fx": null
+  },
+  {
+   "text": "Use the lights to check the doorways. Those are your blind spots. Keep an eye on the show stage, and if someone's missing, go find them. I'll talk to you tomorrow.",
+   "start": 171.65,
+   "end": 187.05,
+   "fx": null
+  }
+ ]
+}

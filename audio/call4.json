@@ -1,0 +1,57 @@
+{
+ "night": 4,
+ "engine": "openai",
+ "model": "gpt-audio-1.5",
+ "voice": "ash",
+ "duration": 56.75,
+ "sentences": [
+  {
+   "text": "Hello? Hey... it's me again. Night four. Honestly, I didn't think I'd get to make this one.",
+   "start": 0.0,
+   "end": 7.9,
+   "fx": null
+  },
+  {
+   "text": "Listen. Something's going on over here tonight. I might not be able to record a message for you tomorrow, so I'm going to say what I can now.",
+   "start": 8.35,
+   "end": 17.2,
+   "fx": null
+  },
+  {
+   "text": "...That's the door. It's holding for now. I'm glad I made these recordings while I could.",
+   "start": 17.65,
+   "end": 24.65,
+   "fx": "bang"
+  },
+  {
+   "text": "If you ever get the chance, do me a favor and check the suits in the back room. Someone should look inside them. I'm going to try to wait it out until someone does.",
+   "start": 25.1,
+   "end": 37.45,
+   "fx": "bang"
+  },
+  {
+   "text": "Maybe it isn't as bad as it sounds. I always wondered what it was like inside one of those heads.",
+   "start": 37.9,
+   "end": 45.6,
+   "fx": "bang"
+  },
+  {
+   "text": "...Do you hear that? That's... no. No, no, no...",
+   "start": 46.05,
+   "end": 52.5,
+   "fx": "music"
+  },
+  {
+   "text": "",
+   "start": 52.95,
+   "end": 55.15,
+   "fx": "moan"
+  },
+  {
+   "text": "",
+   "start": 55.15,
+   "end": 56.75,
+   "fx": "scream"
+  }
+ ]
+}

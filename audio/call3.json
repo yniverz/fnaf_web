@@ -1,0 +1,39 @@
+{
+ "night": 3,
+ "engine": "openai",
+ "model": "gpt-audio-1.5",
+ "voice": "ash",
+ "duration": 57.7,
+ "sentences": [
+  {
+   "text": "Hello, hello? Hey, you're doing great! Most people don't last this long. I mean, not that they... they usually move on to other things. Anyway.",
+   "start": 0.0,
+   "end": 13.75,
+   "fx": null
+  },
+  {
+   "text": "I don't have much to say tonight. Things start getting real on night three.",
+   "start": 14.2,
+   "end": 21.15,
+   "fx": null
+  },
+  {
+   "text": "Here's an idea, though. If you get caught and want to avoid the whole suit thing, try to play dead. Go limp. Maybe they'll think you're an empty costume.",
+   "start": 21.6,
+   "end": 36.3,
+   "fx": null
+  },
+  {
+   "text": "Then again, if they think you're an empty costume they might try to stuff a metal skeleton inside you. Not sure how that would go. ...Yeah, never mind, scratch that. Best not to get caught.",
+   "start": 36.75,
+   "end": 51.95,
+   "fx": null
+  },
+  {
+   "text": "Alright, I'll leave you to it. Talk to you tomorrow.",
+   "start": 52.4,
+   "end": 57.25,
+   "fx": null
+  }
+ ]
+}
