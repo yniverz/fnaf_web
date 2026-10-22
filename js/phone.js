@@ -54,15 +54,37 @@
       this.state = this.script ? 'wait' : 'done';
       this.t = 0; this.idx = 0; this.caption = ''; this.muted = false; this.sentenceEnd = 0; this.waitingSpeech = false;
       this.startDelay = 2.0;
+      this.recording = null; this.handle = null; this.firedFx = 0; this.loading = false; this.ringEnd = 3.8; this.extraRings = 0;
+      // a recorded call takes over if the files exist; otherwise the browser voice reads the script
+      if (this.script && this.script[0].fx !== 'garble') {
+        this.loading = true;
+        A().loadCall(night).then(rec => { this.loading = false; if (rec && this.state !== 'done') this.recording = rec; });
+      }
     }
-    get active() { return this.state === 'ring' || this.state === 'talk'; }
     update(dt) {
       if (this.state === 'done') return;
       this.t += dt;
       if (this.state === 'wait') { if (this.t >= this.startDelay) { this.state = 'ring'; this.t = 0; A().ring(2); } return; }
-      if (this.state === 'ring') { if (this.t >= 3.8) { this.state = 'talk'; this.idx = 0; this.say(); } return; }
+      if (this.state === 'ring') {
+        if (this.t >= this.ringEnd) {
+          if (this.recording) { this.state = 'playing'; this.handle = A().playCall(this.recording.buffer, () => { if (this.state === 'playing') this.end(); }); A().callHandle = this.handle; }
+          else if (this.loading && this.extraRings < 3) { this.extraRings++; this.ringEnd += 3.5; A().ring(2); }   // still downloading: let it ring
+          else { this.state = 'talk'; this.idx = 0; this.say(); }
+        }
+        return;
+      }
+      if (this.state === 'playing') {
+        const pos = A().now() - this.handle.start;
+        const sents = this.recording.info.sentences;
+        const cur = sents.find(s => pos >= s.start && pos < s.end);
+        this.caption = cur ? cur.text : '';
+        // scripted sound effects fire at their sentence start
+        while (this.firedFx < sents.length && pos >= sents[this.firedFx].start) { const s = sents[this.firedFx++]; if (s.fx) this.fx(s.fx); }
+        return;
+      }
       if (this.state === 'talk' && !this.waitingSpeech) { if (this.t >= this.sentenceEnd) this.next(); }
     }
+    get active() { return this.state === 'ring' || this.state === 'talk' || this.state === 'playing'; }
     say() {
       const s = this.script[this.idx];
       this.caption = s.text;
@@ -93,10 +115,11 @@
       else if (name === 'scream') { a.musicStop(); setTimeout(() => { if (!this.muted) a.scream(0.3); }, 300); }
       else if (name === 'garble') a.garble(26);
     }
-    end() { this.state = 'done'; this.caption = ''; if (this.musicStarted) A().musicStop(); }
+    end() { this.state = 'done'; this.caption = ''; if (this.musicStarted) A().musicStop(); if (this.handle) { this.handle.stop(); this.handle = null; A().callHandle = null; } }
     mute() {
       if (!this.active) return;
       this.muted = true;
+      if (this.handle) { this.handle.stop(); this.handle = null; A().callHandle = null; }
       A().stopSpeech();
       if (this.musicStarted) A().musicStop();
       this.state = 'done'; this.caption = '';

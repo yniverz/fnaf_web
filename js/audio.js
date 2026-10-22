@@ -639,9 +639,34 @@
     A.speaking = false; A.currentUtter = null;
   };
 
+  /* ---- recorded phone calls (audio/callN.mp3 + callN.json) ------------------ */
+  A.loadCall = function (night) {
+    if (!A.ctx) return Promise.resolve(null);
+    const base = 'audio/call' + night;
+    return fetch(base + '.json').then(r => { if (!r.ok) throw new Error('no recording'); return r.json(); })
+      .then(info => fetch(base + '.mp3').then(r => { if (!r.ok) throw new Error('no recording'); return r.arrayBuffer(); })
+        .then(buf => new Promise((res, rej) => A.ctx.decodeAudioData(buf, b => res({ info, buffer: b }), rej))))
+      .catch(() => null);
+  };
+  A.playCall = function (buffer, onended) {
+    if (!A.ctx) return null;
+    const src = A.ctx.createBufferSource();
+    src.buffer = buffer;
+    // the files are already band-limited; this just seats the voice in the room
+    const f = A.ctx.createBiquadFilter(); f.type = 'peaking'; f.frequency.value = 1800; f.Q.value = 0.8; f.gain.value = 2;
+    const g = A.ctx.createGain(); g.gain.value = 0.9;
+    src.connect(f); f.connect(g);
+    const pn = A.ctx.createStereoPanner ? A.ctx.createStereoPanner() : null;
+    if (pn) { pn.pan.value = 0.35; g.connect(pn); pn.connect(A.sfxBus); } else g.connect(A.sfxBus);
+    src.onended = () => { if (onended) onended(); };
+    src.start();
+    return { src, gain: g, start: A.now(), stop: () => { try { src.onended = null; src.stop(); } catch (e) { } } };
+  };
+
   A.stopAll = function () {
     for (const k of Object.keys(A.loops)) A.stopLoop(k, 0.2);
     A.musicStop();
     A.stopSpeech();
+    if (A.callHandle) { A.callHandle.stop(); A.callHandle = null; }
   };
 })();
